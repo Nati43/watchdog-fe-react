@@ -3,12 +3,11 @@
 	max-height: unset !important;
 }
 .maximized {
-	position: fixed;
-	z-index: 10;
 	max-width: unset !important; 
 	max-height: unset !important;
 	width: 70vw !important;
-	height: 70vh !important;
+	height: 45vw !important;
+	height: 85vh !important;
 }
 @keyframes heartbeat {
 	0% {

@@ -5,7 +5,7 @@ import { SocketContext } from '../Context/SocketContext';
 
 const parser = new Convert();
 
-function Console({containerID, meta, closeConsole, removeCounter}) {
+function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
     // Get socket from context
     const socket = useContext(SocketContext);
 
@@ -43,7 +43,7 @@ function Console({containerID, meta, closeConsole, removeCounter}) {
     }
 
     const mark = ()=>{
-        if(searchInput.current.value.trim().length) {
+        if(searchInput.current && searchInput.current.value.trim().length) {
             let indices = [];
             lines.forEach((line, idx) => {
                 if(line.match(toRegex(searchInput.current.value)))
@@ -132,8 +132,13 @@ function Console({containerID, meta, closeConsole, removeCounter}) {
         }
     }, [pointer]);
 
+    useEffect(()=>{
+        maximize(maximized)
+    }, [maximized]);
+
     return (
-        meta[containerID] && <div 
+        meta[containerID] && 
+        <div 
             className={
                 "mx-12 flex flex-col shadow" + 
                 (maximized ? ' maximized':'')
@@ -176,11 +181,11 @@ function Console({containerID, meta, closeConsole, removeCounter}) {
                 className="flex shadow" 
                 style={{ backgroundColor:"#181818", padding: ".85em" }} >
 
-                <div onClick={()=>{closeSelf()}} className="mx-1 rounded-full bg-red-500 flex" style={{ height: "1em", width: "1em" }} >
-                    <i className="fa fa-close font-bold text-white mx-auto my-auto" style={{ fontSize:".5em" }} ></i>
+                <div onClick={()=>{setMaximized(false);closeSelf()}} className="mx-1 rounded-full bg-red-500 flex" style={{ height: "1em", width: "1em" }} >
+                    <i className="fa fa-close font-bold text-white mx-auto my-auto" style={{ fontSize:".5em", cursor:"pointer" }} ></i>
                 </div>
                 <div onClick={()=>{setMaximized(!maximized)}} className="mx-1 rounded-full bg-green-500 flex" style={{ height:"1em", width:"1em" }} >
-                    <i className="fa fa-expand font-bold text-white mx-auto my-auto" style={{ fontSize: ".5em" }}></i>
+                    <i className="fa fa-expand font-bold text-white mx-auto my-auto" style={{ fontSize: ".5em", cursor:"pointer" }}></i>
                 </div>
 
                 {removeCounter && <span className="ml-3 my-auto beat"> Container removed. Closing in ... { removeCounter } </span>}

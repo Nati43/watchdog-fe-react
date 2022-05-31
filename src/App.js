@@ -71,7 +71,7 @@ function App() {
             {!loggedIn && <Login loggedInEvent={loggedInEvent} />}
             {loggedIn && meta && socket &&
                 <SocketContext.Provider value={socket} >
-                   && <Containers meta={meta} remove={remove} removeComplete={removeCompleteEvent} />
+                   <Containers meta={meta} remove={remove} removeComplete={removeCompleteEvent} />
                 </SocketContext.Provider>
             }
 
