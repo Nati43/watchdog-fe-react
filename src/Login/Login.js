@@ -7,8 +7,7 @@ function Login({loggedInEvent}) {
     const [loggingIn, setLoggingIn] = useState(false);
     const [pinError, setPinError] = useState(null);
 
-    const login = () => {        
-        console.log(`Logging in with ${pinInput.current.value}`);
+    const login = () => {
         setLoggingIn(true);
         
         const socket = io('localhost:9999/meta', { query: "pin=" + pinInput.current.value });
@@ -28,8 +27,7 @@ function Login({loggedInEvent}) {
     return (
         <div 
             id="app" 
-            className="flex flex-col items-stretch justify-content-center my-auto shadow-lg p-5"
-            style={{ background:"#171717", borderRadius:"1em" }} >
+            className="flex flex-col items-stretch justify-content-center my-auto shadow-lg p-5 bg-[#171717] rounded-2xl" >
             <div className="form-header px-4 py-0 my-3" >
                 <p className="text-xl px-0 py-0 logo-text flex content-center justify-center font-bold"> 
                     <span className='my-auto'>Watch..</span>
@@ -52,7 +50,7 @@ function Login({loggedInEvent}) {
                     <div className="mt-1 relative rounded-md shadow-sm">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> 🔑 </span>
                         <input
-                            type="text"
+                            type="password"
                             name="pin"
                             id="pin"
                             ref={pinInput}

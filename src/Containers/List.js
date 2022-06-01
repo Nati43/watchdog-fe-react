@@ -24,8 +24,7 @@ function List({meta, openConsoleEvent}) {
 
     return (
         <div
-            className="mx-auto flex flex-col justify-center" 
-            style={{maxWidth: "45%"}} >
+            className="mx-auto flex flex-col justify-center max-w-[45%]" >
             <div className="form-header px-4 py-0 my-3 mb-7" >
                 <p className="text-xl px-0 py-0 logo-text flex content-center justify-center font-bold"> 
                     <span className='my-auto'>Watch..</span>
@@ -48,20 +47,18 @@ function List({meta, openConsoleEvent}) {
                     Object.keys(meta).map((containerID) =>
                         <div 
                             onClick={()=>{openConsole(containerID)}}
-                            className="flex align-center p-3 m-2 button shadow-sm bg-neutral-900 hover:bg-stone-800" 
-                            style={{ borderRadius: "1em", width: "15em", cursor: "pointer" }}
+                            className="flex align-center p-3 m-2 button shadow-sm bg-neutral-900 hover:bg-stone-800 rounded-2xl w-[15em] cursor-pointer" 
                             key={containerID}>
                             <div className="p-3 pl-6 grid place-content-center">
                                 <i className={ 
-                                    'fa fa-microchip ' + 
+                                    'fa fa-microchip text-base ' + 
                                     (meta[containerID].state === 'starting' ? 'text-slate-300':'') +
                                     (meta[containerID].state === 'running' ? 'text-green-500':'') +
                                     (meta[containerID].state === 'restarting' ? 'text-orange-500':'') +
                                     (meta[containerID].state === 'paused' ? 'text-sky-500':'') +
                                     (meta[containerID].state === 'removing' ? 'text-red-500':'') +
                                     (['exited', 'dead'].includes(meta[containerID].state) ? 'text-grey-500':'')
-                            }
-                            style={{fontSize: "1em"}}></i>
+                            }></i>
                             </div>
                             <div className="p-3 flex flex-col">
                                 <span className="my-auto font-bold text-white"> {parseName(meta[containerID].name)} </span>

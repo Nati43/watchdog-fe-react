@@ -15,7 +15,7 @@ function App() {
             socket.emit('meta');
 
             socket.on('meta', (data) => {
-                setMeta((prev) => {
+                setMeta(() => {
                     return { ...sortObject(data) };
                 });
             });
@@ -23,7 +23,7 @@ function App() {
             socket.removeAllListeners('state-change');
             socket.on("state-change", (data) => {
                 setMeta(prev => {
-                    let tmp = { ...prev };
+                    const tmp = { ...prev };
                     tmp[data.id].state = data.state;
                     return tmp;
                 });
@@ -31,7 +31,7 @@ function App() {
         
 			socket.on("added", (container)=> {
                 setMeta((prev)=>{
-                    let tmp = {...prev};
+                    const tmp = {...prev};
                     tmp[container.id] = container;
                     return tmp;
                 })
@@ -64,9 +64,7 @@ function App() {
     }
     
     return (
-        <div
-            className='h-screen grid place-content-center bg-slate-900'
-            style={{ background: "#121212" }} >
+        <div className='h-screen grid place-content-center bg-slate-900 bg-[#121212]' >
 
             {!loggedIn && <Login loggedInEvent={loggedInEvent} />}
             {loggedIn && meta && socket &&
