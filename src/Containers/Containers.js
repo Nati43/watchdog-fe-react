@@ -6,8 +6,16 @@ import List from './List'
 function Containers({meta, remove, removeComplete}) {
     const [selected, setSelected] = useState(null);
     const [removeCounter, setRemoveCounter] = useState(null);
-    const [maximized, setMaximized] = useState(false)
+    const [maximized, setMaximized] = useState(false);
     
+    useEffect(()=>{
+        return () => {
+            setSelected(null);
+            setRemoveCounter(null);
+            setMaximized(false);
+        }
+    }, []);
+
     const [isVisible, setIsVisible] = useState(false);
     const mountTransition = useTransition(isVisible, {
         from: { transform: 'scale(0.75)' },

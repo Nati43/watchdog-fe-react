@@ -8,6 +8,7 @@ const parser = new Convert();
 function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
     // Get socket from context
     const socket = useContext(SocketContext);
+    const prevContainerID = useRef()
 
     // Declare states
     const [lines, setLines] = useState([]);
@@ -17,24 +18,75 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
     const [pointer, setPointer] = useState(-1);
     const [caseSensitive, setCaseSensitive] = useState(false);
 
+    useEffect(()=>{
+        return ()=>{
+            setLines([]);
+            setHighlight([]);
+            setMarkKey("");
+            setPointer(-1);
+            setCaseSensitive(false);
+            if(containerID) {
+                socket.removeAllListeners(containerID+'-subscribed');
+                socket.removeAllListeners(containerID+'-unsubscribed');
+                socket.removeAllListeners(containerID+'-init');
+                socket.removeAllListeners(containerID+'-line');
+            }
+        }
+    }, [])
+    
+    useEffect(() => {
+        if(containerID) {
+            socket.removeAllListeners(prevContainerID.current+'-subscribed');
+            socket.removeAllListeners(prevContainerID.current+'-unsubscribed');
+            socket.removeAllListeners(prevContainerID.current+'-init');
+            socket.removeAllListeners(prevContainerID.current+'-line');
+            prevContainerID.current = containerID;
+        }
+
+        setLines([]);
+        setHighlight([]);
+        setMarkKey("");
+        setPointer(-1);
+        setCaseSensitive(false);
+
+        // Event triggered to subscribe to containerID
+        socket?.emit(containerID+'-subscribe');
+
+        socket?.on(containerID+'-subscribed', () => {
+            socket?.on(containerID+'-init', (data) => {
+                let tempLines = [];
+                data.forEach(line => {
+                    var log;
+                    try {
+                        log = JSON.parse(line).log;
+                    } catch (err) {
+                        log = line;
+                    }
+                    tempLines.push(parser.toHtml(log));
+                });
+                setLines(prev => {
+                    return [...tempLines];
+                });
+                setTimeout(()=>{
+                    cons.current.scrollTop = cons.current.scrollHeight;
+                }, 50);
+            });
+
+            socket?.on(containerID+'-line', (line) => {
+                setLines(prev => {
+                    return [...prev, parser.toHtml(line)];
+                });
+                setTimeout(()=>{
+                    cons.current.scrollTop = cons.current.scrollHeight;
+                }, 50);
+            });
+        });
+    }, [containerID]);
+
     // Declare refs
     const cons = useRef();
     const searchInput = useRef();
     const linesRef = useRef([]);
-
-    const closeSelf = ()=>{
-        socket.emit(containerID+'-unsubscribe');
-        socket.on(containerID+'-unsubscribed', () => {
-            socket.removeAllListeners(containerID+'-init');
-            socket.removeAllListeners(containerID+'-line');
-            socket.removeAllListeners(containerID+'-subscribed');
-            socket.removeAllListeners(containerID+'-unsubscribed');
-            closeConsole();
-        });
-        setPointer(-1);
-        setHighlight([]);
-        setLines([]);
-    }
 
     const keyPress = (event) => {
         if(event.key === 'Enter'){
@@ -83,44 +135,6 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
             return new RegExp(`${key}`,"gi");
         }
     }
-
-    useEffect(()=>{
-        if(socket) {
-            setLines([]);
-            // Event triggered to subscribe to containerID
-            socket.emit(containerID+'-subscribe');
-    
-            socket.on(containerID+'-subscribed', () => {
-                socket.on(containerID+"-init", (data) => {
-                    let tempLines = [];
-                    data.forEach(line => {
-                        var log;
-                        try {
-                            log = JSON.parse(line).log;
-                        } catch (err) {
-                            log = line;
-                        }
-                        tempLines.push(parser.toHtml(log));
-                    });
-                    setLines(prev => {
-                        return [...tempLines];
-                    });
-                    setTimeout(()=>{
-                        cons.current.scrollTop = cons.current.scrollHeight;
-                    }, 50);
-                });
-    
-                socket.on(containerID+"-line", (line) => {
-                    setLines(prev => {
-                        return [...prev, parser.toHtml(line)];
-                    });
-                    setTimeout(()=>{
-                        cons.current.scrollTop = cons.current.scrollHeight;
-                    }, 50);
-                });
-            });
-        }
-    }, [containerID]);
 
     useEffect(()=>{
         mark();
@@ -173,10 +187,9 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
                 </div>
             </div>
 
-            <div 
-                className="flex shadow bg-[#181818] p-3.5" >
+            <div className="flex shadow bg-[#181818] p-3.5" >
 
-                <div onClick={()=>{setMaximized(false);closeSelf()}} className="mx-1 rounded-full bg-red-500 flex h-[1em] w-[1em]" >
+                <div onClick={()=>{setMaximized(false);closeConsole()}} className="mx-1 rounded-full bg-red-500 flex h-[1em] w-[1em]" >
                     <i className="fa fa-close font-bold text-white mx-auto my-auto text-[.5em] cursor-pointer"></i>
                 </div>
                 <div onClick={()=>{setMaximized(!maximized)}} className="mx-1 rounded-full bg-green-500 flex h-[1em] w-[1em]" >

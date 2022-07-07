@@ -10,45 +10,50 @@ function App() {
     const [meta, setMeta] = useState({});
     const [remove, setRemove] = useState({});
 
+    useEffect(()=>{
+        return () => {
+            if(socket) {
+                socket.removeAllListeners();
+                socket.disconnect();
+            }
+        };
+    }, []);
+
     useEffect(() => {
-        if(socket) {
-            socket.emit('meta');
+        socket?.emit('meta');
 
-            socket.on('meta', (data) => {
-                setMeta(() => {
-                    return { ...sortObject(data) };
-                });
+        socket?.on('meta', (data) => {
+            setMeta(() => {
+                return { ...sortObject(data) };
             });
+        });
 
-            socket.removeAllListeners('state-change');
-            socket.on("state-change", (data) => {
-                setMeta(prev => {
-                    const tmp = { ...prev };
-                    tmp[data.id].state = data.state;
-                    return tmp;
-                });
+        socket?.removeAllListeners('state-change');
+        socket?.on("state-change", (data) => {
+            setMeta(prev => {
+                const tmp = { ...prev };
+                tmp[data.id].state = data.state;
+                return tmp;
             });
-        
-			socket.on("added", (container)=> {
-                setMeta((prev)=>{
-                    const tmp = {...prev};
-                    tmp[container.id] = container;
-                    return tmp;
-                })
-			});
+        });
+    
+        socket?.on("added", (container)=> {
+            setMeta((prev)=>{
+                const tmp = {...prev};
+                tmp[container.id] = container;
+                return tmp;
+            })
+        });
 
-			socket.on("removed", (containerID)=> {
-				socket.emit(containerID+'-unsubscribe');
-				socket.removeAllListeners(containerID+'-init');
-				socket.removeAllListeners(containerID+'-line');
-				socket.removeAllListeners(containerID+'-subscribed');
-				socket.removeAllListeners(containerID+'-unsubscribed');
-                setRemove(containerID);
-			});
-		
-        }
+        socket?.on("removed", (containerID)=> {
+            socket.emit(containerID+'-unsubscribe');
+            socket.removeAllListeners(containerID+'-init');
+            socket.removeAllListeners(containerID+'-line');
+            socket.removeAllListeners(containerID+'-subscribed');
+            socket.removeAllListeners(containerID+'-unsubscribed');
+            setRemove(containerID);
+        });
     }, [loggedIn]);
-
     
     const loggedInEvent = (sock) => {
         setSocket(sock);
