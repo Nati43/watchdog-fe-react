@@ -1,87 +1,33 @@
-import './Console.css'
-import Convert from "ansi-to-html";
+import './Console.css';
 import { useContext, useEffect, useRef, useState } from "react";
 import { SocketContext } from '../Context/SocketContext';
-
-const parser = new Convert();
+import {search, findNext, findPrev, toRegex} from '../utils';
+import { useLines } from '../Socket/socket';
 
 function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
     // Get socket from context
     const socket = useContext(SocketContext);
-    const prevContainerID = useRef()
 
     // Declare states
-    const [lines, setLines] = useState([]);
+    const [lines] = useLines(socket, containerID);
     const [highlight, setHighlight] = useState([]);
     const [maximized, setMaximized] = useState(false);
     const [markKey, setMarkKey] = useState("");
     const [pointer, setPointer] = useState(-1);
     const [caseSensitive, setCaseSensitive] = useState(false);
 
-    useEffect(()=>{
-        return ()=>{
-            setLines([]);
-            setHighlight([]);
-            setMarkKey("");
-            setPointer(-1);
-            setCaseSensitive(false);
-            if(containerID) {
-                socket.removeAllListeners(containerID+'-subscribed');
-                socket.removeAllListeners(containerID+'-unsubscribed');
-                socket.removeAllListeners(containerID+'-init');
-                socket.removeAllListeners(containerID+'-line');
-            }
-        }
-    }, [])
-    
     useEffect(() => {
-        if(containerID) {
-            socket.removeAllListeners(prevContainerID.current+'-subscribed');
-            socket.removeAllListeners(prevContainerID.current+'-unsubscribed');
-            socket.removeAllListeners(prevContainerID.current+'-init');
-            socket.removeAllListeners(prevContainerID.current+'-line');
-            prevContainerID.current = containerID;
-        }
-
-        setLines([]);
         setHighlight([]);
         setMarkKey("");
         setPointer(-1);
         setCaseSensitive(false);
-
-        // Event triggered to subscribe to containerID
-        socket?.emit(containerID+'-subscribe');
-
-        socket?.on(containerID+'-subscribed', () => {
-            socket?.on(containerID+'-init', (data) => {
-                let tempLines = [];
-                data.forEach(line => {
-                    var log;
-                    try {
-                        log = JSON.parse(line).log;
-                    } catch (err) {
-                        log = line;
-                    }
-                    tempLines.push(parser.toHtml(log));
-                });
-                setLines(prev => {
-                    return [...tempLines];
-                });
-                setTimeout(()=>{
-                    cons.current.scrollTop = cons.current.scrollHeight;
-                }, 50);
-            });
-
-            socket?.on(containerID+'-line', (line) => {
-                setLines(prev => {
-                    return [...prev, parser.toHtml(line)];
-                });
-                setTimeout(()=>{
-                    cons.current.scrollTop = cons.current.scrollHeight;
-                }, 50);
-            });
-        });
     }, [containerID]);
+
+    useEffect(()=>{
+        setTimeout(()=>{
+            cons.current.scrollTop = cons.current.scrollHeight;
+        }, 50);
+    }, [lines]);
 
     // Declare refs
     const cons = useRef();
@@ -90,54 +36,20 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
 
     const keyPress = (event) => {
         if(event.key === 'Enter'){
-            mark();
-        }
-    }
-
-    const mark = ()=>{
-        if(searchInput.current && searchInput.current.value.trim().length) {
-            let indices = [];
-            lines.forEach((line, idx) => {
-                if(line.match(toRegex(searchInput.current.value)))
-                    indices.push(idx);
-            });
-            setHighlight((prev) => {
+            let {key, indices} = search(lines, searchInput.current.value, caseSensitive);
+            setHighlight(() => {
                 return indices;
             });
-            setMarkKey(searchInput.current.value);
-        }
-    }
-
-    const findNext = ()=>{
-        if(pointer === -1)
-            setPointer(0);
-        else
-            setPointer(pointer+1);
-
-        if(pointer >= highlight.length)
-            setPointer(0)
-    }
-
-    const findPrev = ()=>{
-        if(pointer === -1)
-            setPointer(highlight.length - 1);
-        else
-            setPointer(pointer - 1);
-            
-        if(pointer < 0)
-            setPointer(highlight.length - 1);
-    }
-
-    const toRegex = (key) => {
-        if(caseSensitive) {
-            return new RegExp(`${key}`,"g");
-        }else {
-            return new RegExp(`${key}`,"gi");
+            setMarkKey(key);
         }
     }
 
     useEffect(()=>{
-        mark();
+        let {key, indices} = search(lines, searchInput.current.value, caseSensitive);
+        setHighlight(() => {
+            return indices;
+        });
+        setMarkKey(key);
     }, [caseSensitive]);
 
     useEffect(()=>{
@@ -147,7 +59,7 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
     }, [pointer]);
 
     useEffect(()=>{
-        maximize(maximized)
+        maximize(maximized);
     }, [maximized]);
 
     return (
@@ -167,11 +79,11 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
                             Aa
                         </i>
                         <i 
-                            onClick={()=>{findPrev()}}
+                            onClick={()=>{setPointer(findPrev(pointer, highlight.length))}}
                             className={"cursor-pointer font-bold absolute inset-y-0 right-0 pl-3 pr-12 flex items-center fa fa-arrow-up"+(highlight.length ? ' text-white':' text-slate-500')}>
                         </i>
                         <i 
-                            onClick={()=>{findNext()}}
+                            onClick={()=>{setPointer(findNext(pointer, highlight.length))}}
                             className={"cursor-pointer font-bold absolute inset-y-0 -right-7 pl-3 pr-12 flex items-center fa fa-arrow-down"+(highlight.length ? ' text-white':' text-slate-500')}>
                         </i>
                         <input
@@ -253,7 +165,7 @@ function Console({containerID, meta, closeConsole, removeCounter, maximize}) {
                             key={idx}
                             ref={el => linesRef.current[idx] = el}
                             className={(highlight[pointer] === idx) ? 'bg-[#0005] text-white heartbeat':''}
-                            dangerouslySetInnerHTML={{__html: highlight.indexOf(idx) === -1 ? line : line.replace(toRegex(markKey), '<span class=\'bg-[tomato] text-white font-bold\'>$&</span>')}} ></li>
+                            dangerouslySetInnerHTML={{__html: highlight.indexOf(idx) === -1 ? line : line.replace(toRegex(markKey, caseSensitive), '<span class=\'bg-[tomato] text-white font-bold\'>$&</span>')}} ></li>
                     })
                 }
 

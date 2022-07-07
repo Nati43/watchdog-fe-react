@@ -1,26 +1,15 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SocketContext } from '../Context/SocketContext';
+import { useSelected } from "../Socket/socket";
 
 function List({meta, openConsoleEvent}) {
-    const [selected, setSelected] = useState(null);
     const socket = useContext(SocketContext);
+    const [containerID, setContainerID] = useState(null);
+    const [selected] = useSelected(socket, containerID);
 
-    const openConsole = (cid) => {
-        if(selected) {
-            socket.emit(selected+'-unsubscribe');
-            socket.on(selected+'-unsubscribed', () => {
-                socket.removeAllListeners(selected+'-init');
-                socket.removeAllListeners(selected+'-line');
-                socket.removeAllListeners(selected+'-subscribed');
-                socket.removeAllListeners(selected+'-unsubscribed');
-                openConsoleEvent(cid);
-                setSelected(cid)
-            });
-        } else {
-            openConsoleEvent(cid);
-            setSelected(cid);
-        }
-    }
+    useEffect(()=>{
+        openConsoleEvent(selected);
+    }, [selected]);
 
     return (
         <div
@@ -46,7 +35,7 @@ function List({meta, openConsoleEvent}) {
                 { meta &&
                     Object.keys(meta).map((containerID) =>
                         <div 
-                            onClick={()=>{openConsole(containerID)}}
+                            onClick={()=>{setContainerID(containerID)}}
                             className="flex align-center p-3 m-2 button shadow-sm bg-neutral-900 hover:bg-stone-800 rounded-2xl w-[15em] cursor-pointer" 
                             key={containerID}>
                             <div className="p-3 pl-6 grid place-content-center">

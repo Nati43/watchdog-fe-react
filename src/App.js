@@ -3,58 +3,14 @@ import { useState, useEffect } from 'react';
 import Login from './Login/Login';
 import Containers from './Containers/Containers';
 import { SocketContext } from './Context/SocketContext';
+import { useMeta, useRemove } from './Socket/socket';
 
 function App() {
     const [socket, setSocket] = useState(null);
-    const [loggedIn, setLoggedIn] = useState(false);
-    const [meta, setMeta] = useState({});
-    const [remove, setRemove] = useState({});
+    const [loggedIn, setLoggedIn] = useState(false);    
+    const [meta, setMeta] = useMeta(socket);
+    const [remove] = useRemove(socket);
 
-    useEffect(()=>{
-        return () => {
-            if(socket) {
-                socket.removeAllListeners();
-                socket.disconnect();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        socket?.emit('meta');
-
-        socket?.on('meta', (data) => {
-            setMeta(() => {
-                return { ...sortObject(data) };
-            });
-        });
-
-        socket?.removeAllListeners('state-change');
-        socket?.on("state-change", (data) => {
-            setMeta(prev => {
-                const tmp = { ...prev };
-                tmp[data.id].state = data.state;
-                return tmp;
-            });
-        });
-    
-        socket?.on("added", (container)=> {
-            setMeta((prev)=>{
-                const tmp = {...prev};
-                tmp[container.id] = container;
-                return tmp;
-            })
-        });
-
-        socket?.on("removed", (containerID)=> {
-            socket.emit(containerID+'-unsubscribe');
-            socket.removeAllListeners(containerID+'-init');
-            socket.removeAllListeners(containerID+'-line');
-            socket.removeAllListeners(containerID+'-subscribed');
-            socket.removeAllListeners(containerID+'-unsubscribed');
-            setRemove(containerID);
-        });
-    }, [loggedIn]);
-    
     const loggedInEvent = (sock) => {
         setSocket(sock);
         setLoggedIn(true);
@@ -83,26 +39,3 @@ function App() {
 }
 
 export default App;
-
-function sortObject(data) {
-    let sortable = [];
-    // Convert to array
-    Object.values(data).forEach((container) => {
-        sortable.push(container);
-    });
-    // Sort
-    sortable.sort((a, b) => {
-        if (a.name < b.name)
-            return -1;
-        if (a.name > b.name)
-            return 1;
-        return 0;
-    });
-    // Convert back to object
-    let sortedData = {};
-    sortable.forEach(container => {
-        sortedData[container.id] = container;
-    });
-
-    return sortedData;
-}
