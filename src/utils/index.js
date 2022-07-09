@@ -35,24 +35,19 @@ export const findPrev = (pointer, n) => {
 }
 
 export const  sortObject = (data) => {
-    let sortable = [];
     // Convert to array
-    Object.values(data).forEach((container) => {
-        sortable.push(container);
+    let sortable = Object.values(data).map((container) => {
+        return container;
     });
     // Sort
     sortable.sort((a, b) => {
-        if (a.name < b.name)
+        if (a.name.toLowerCase() < b.name.toLowerCase())
             return -1;
-        if (a.name > b.name)
+        if (a.name.toLowerCase() > b.name.toLowerCase())
             return 1;
         return 0;
     });
     // Convert back to object
-    let sortedData = {};
-    sortable.forEach(container => {
-        sortedData[container.id] = container;
-    });
-
+    let sortedData = sortable.reduce((container, currentValue) => ({...container, [currentValue.id]: currentValue}), {});
     return sortedData;
 }

@@ -11,9 +11,7 @@ export const useMeta = (socket) => {
         socket?.emit('meta');
 
         socket?.on('meta', (data) => {
-            setMeta(() => {
-                return { ...sortObject(data) };
-            });
+            setMeta({ ...sortObject(data) });
         });
 
         socket?.removeAllListeners('state-change');
